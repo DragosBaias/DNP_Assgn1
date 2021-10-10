@@ -1,0 +1,96 @@
+﻿@page "/FamilyList"
+@using Data;
+@using Models
+@inject NavigationManager _navigationManager;
+@inject IFamilyData _familyData;
+<div class="d-flex justify-content-center">
+    <div class=" col-9 ">
+        <h1>List of Families</h1>
+        <p>Search for a particular family: <input type="text" @oninput="@((arg) => FilterByAddress(arg))" style="width: 200px"/></p>
+        @if (_filteredFamilies == null) {
+            <p>
+                <em> Loading ...</em>
+            </p>
+        }
+        else if (!_filteredFamilies.Any()) {
+            <p>
+                <em> No families in the system yet</em>
+            </p>
+        }
+        else {
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Members</th>
+                    <th @onclick="SortByStreetName">Street Name</th>
+                    <th>House Numbers</th>
+                    <th @onclick="FilterByPets">Pets</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (Family item in _filteredFamilies) {
+                    <tr @onclick="@(() => View(item.StreetName, item.HouseNumber))" class="family-row">
+                        <td>@item.GetNumberOfMembers()</td>
+                        <td>@item.StreetName</td>
+                        <td>@item.HouseNumber</td>
+                        <td>
+                            <input type="checkbox" checked="@item.HasPets()"/>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+
+    private IList<Family> _families;
+    private IList<Family> _filteredFamilies;
+
+    private bool _wasChecked;
+
+    protected override async Task OnInitializedAsync() {
+        _families = _familyData.GetFamilies();
+        _filteredFamilies = _families;
+        _wasChecked = false;
+    }
+
+
+    private void FilterByAddress(ChangeEventArgs changeEventArgs) {
+        List<Family> filter = new List<Family>();
+        foreach (var family in _families) {
+            if (family.GetUniqueKey().ToLower().Contains(changeEventArgs.Value.ToString().ToLower()))
+                filter.Add(family);
+        }
+        _filteredFamilies = filter;
+    }
+
+    private void View(string streetName, int houseNumber) {
+        _navigationManager.NavigateTo($"Family/{streetName}/{houseNumber}");
+    }
+
+    private void SortByStreetName() {
+        var sort = _families.OrderBy(name => name.StreetName);
+        _filteredFamilies = sort.ToList();
+    }
+
+    private void FilterByPets() {
+        List<Family> filter = new List<Family>();
+        foreach (var family in _families) {
+            if (family.HasPets()) {
+                filter.Add(family);
+            }
+        }
+        if (!_wasChecked) {
+            _filteredFamilies = _families;
+            _wasChecked = true;
+        }
+        else {
+            _filteredFamilies = filter;
+            _wasChecked = false;
+        }
+    }
+
+}

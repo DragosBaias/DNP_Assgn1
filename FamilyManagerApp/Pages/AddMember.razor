@@ -1,0 +1,209 @@
+﻿@page "/addmember/{streetName}/{houseNumber:int}/{type}"
+@using Data;
+@using Models
+@inject NavigationManager _navMng;
+@inject IFamilyData _familyData;
+<div class="text-center">
+    <h3>Add a New @Type</h3>
+</div>
+
+@if (Type.Equals("Pet")) {
+    <div class="container text-center">
+    <div class="card text-center py-3">
+        <EditForm Model="@_pet" OnValidSubmit="@AddPet">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+            <p>Child:</p>
+            <div class="form-group">
+                <InputSelect name="child" @bind-Value="_person.FirstName">
+                    <option value="None">None</option>
+                    @foreach (var child in _family.Children) {
+                        <option value="@child.FirstName"> @child.FirstName</option>
+                    }
+                </InputSelect>
+            </div>
+            <p>Name:</p>
+            <div class="form-group">
+                <InputText @bind-Value="_pet.Name"/>
+            </div>
+            <p>Species:</p>
+            <div class="form-group">
+                <InputText @bind-Value="_pet.Species"/>
+            </div>
+            <p>Age:</p>
+            <div class="form-group">
+                <InputNumber @bind-Value="_pet.Age"/>
+            </div>
+            <p class="actions">
+                <button class="btn btn-outline-dark" type="submit">Add Pet</button>
+            </p>
+        </EditForm>
+    </div>
+    </div>
+} else {
+    <EditForm Model="@_person" OnValidSubmit="@AddPerson">
+        <DataAnnotationsValidator/>
+        <ValidationSummary/>
+        <div class="container text-center">
+        <div class="card text-center py-3">
+            <div class="row">
+                <div class="col-md-6 col-sm-12 text-center">
+                    <p>First Name:</p>
+                    <div class="form-group">
+                        <InputText @bind-Value="_person.FirstName"/>
+                    </div>
+                    <div>
+                        <label>Last Name:</label>
+                        <div class="form-group">
+                            <InputText @bind-Value="_person.LastName"/>
+                        </div>
+                    </div>
+                    <p>Hair color:</p>
+                    <div class="form-group">
+                        <InputSelect name="hair_color" @bind-Value="_person.HairColor">
+                            <option value="Black">Black</option>
+                            <option value="Grey">Grey</option>
+                            <option value="Blond">Blond</option>
+                            <option value="Leverpostej">Leverpostej</option>
+                            <option value="White">White</option>
+                            <option value="Blue">Blue</option>
+                        </InputSelect >
+                    </div>
+                    <p>Eye color:</p>
+                    <div class="form-group">
+                        <InputSelect name="eye_color" @bind-Value="_person.EyeColor">
+                            <option value="Blue">Blue</option>
+                            <option value="Hazel">Hazel</option>
+                            <option value="Grey">Grey</option>
+                            <option value="Amber">Amber</option>
+                            <option value="Brown">Brown</option>
+                        </InputSelect>
+                    </div>
+                    <p>Age:</p>
+                    <div class="form-group">
+                        <InputNumber @bind-Value="_person.Age"/>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12 text-center">
+                    <p>Height:</p>
+                    <div class="form-group">
+                        <InputNumber @bind-Value="_person.Height"/>
+                    </div>
+                    <p>Weight:</p>
+                    <div class="form-group">
+                        <InputNumber @bind-Value="_person.Weight"/>
+                    </div>
+                    <p>Sex:</p>
+                    <div class="form-group">
+                        <InputSelect name="Sex" @bind-Value="_person.Sex">
+                            <option value="F">F</option>
+                            <option value="M">M</option>
+                        </InputSelect>
+                    </div>
+                    @if (Type.Equals("Adult")) {
+                        <EditForm Model="@_job" Context="j">
+                            <p>Job title:</p>
+                            <div class="form-group">
+                                <InputText @bind-Value="_job.JobTitle"/>
+                            </div>
+                            <p>Salary:</p>
+                            <div class="form-group">
+                                <InputNumber @bind-Value="_job.Salary"/>
+                            </div>
+                        </EditForm>
+                    } else {
+                        <EditForm Model="@_interest" Context="i">
+                            <p>Type:</p>
+                            <div class="form-group">
+                                <InputText @bind-Value="_interest.Type"/>
+                            </div>
+                            <p>Description:</p>
+                            <div class="form-group">
+                                <InputText @bind-Value="_interest.Description"/>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+                <p class="actions mx-auto">
+                    <button class="btn btn-outline-dark" type="submit">Add Person</button>
+                </p>
+            </div>
+        </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+
+    [Parameter]
+    public string StreetName { get; set; }
+
+    [Parameter]
+    public int HouseNumber { get; set; }
+
+    [Parameter]
+    public string Type { get; set; }
+
+    private Family _family = new Family();
+    private Person _person = new Person();
+    private Pet _pet = new Pet();
+    private Job _job = new Job();
+    private Interest _interest = new Interest();
+    private string _hairColor;
+    private string _eyeColor;
+    private string _sex;
+
+    protected override async Task OnInitializedAsync() {
+        _family = _familyData.GetFamily(StreetName, HouseNumber);
+        _person.HairColor = "Black";
+        _person.EyeColor = "Blue";
+        _person.Sex = "F";
+    }
+
+    private void AddPet() {
+        if (!_person.FirstName.Equals("None"))
+            _familyData.AddPet(_pet, _family, _family.Children.First(c => c.FirstName.Equals(_person.FirstName)));
+        else
+            _familyData.AddPet(_pet, _family);
+        _navMng.NavigateTo("/addfamilymember");
+    }
+
+    private void AddPerson() {
+        if (Type.Equals("Adult")) {
+            _familyData.AddAdult(new Adult() {
+                FirstName = _person.FirstName,
+                LastName = _person.LastName,
+                EyeColor = _person.EyeColor,
+                HairColor = _person.HairColor,
+                Age = _person.Age,
+                Height = _person.Height,
+                Weight = _person.Weight,
+                Sex = _person.Sex,
+                JobTitle = new Job() {
+                    JobTitle = _job.JobTitle,
+                    Salary = _job.Salary
+                }
+            }, _family);
+        }
+        else {
+            _familyData.AddChild(new Child() {
+                FirstName = _person.FirstName,
+                LastName = _person.LastName,
+                EyeColor = _person.EyeColor,
+                HairColor = _person.HairColor,
+                Age = _person.Age,
+                Height = _person.Height,
+                Weight = _person.Weight,
+                Sex = _person.Sex,
+                Pets = new List<Pet>(),
+                Interests = new List<Interest>() {
+                    new Interest() {
+                        Description = _interest.Description,
+                        Type = _interest.Type
+                    }
+                }
+            }, _family);
+        }
+        _navMng.NavigateTo("/addfamilymember");
+    }
+}            
